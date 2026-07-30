@@ -1,10 +1,27 @@
 # AssetBundle decryptor for Desktop Mate
+
 A small program for decrypting/encrypting the asset bundles of Desktop Mate. Could be used to extract resources or import custom models.
+
+## Note: This program is only guaranteed to work with the specified version.
+
+### Current version: **1.12.0**
+
 ## Usage
-`executable-file <path/to/AssetBundle/directory> <AssetBundleType> [isEncrypt]`
-- path to AssetBundle directory - This should be `<InstallationPath>\DesktopMate_Data\StreamingAssets\AssetBundle`.
-- AssetBundleType - `iltan` or `miku`
-- isEncrypt - set to `E` for encrypt; otherwise decrypt.
+
+```
+executable-file [-oevm] <input>
+
+  -o, --output          Output file
+
+  -e, --encrypt         Encrypt the input file into .cb asset bundle
+
+  -v, --file-version    File version to set in the encrypted asset bundle. Need to be identical to the version specified in database.info.
+
+  -m, --decrypt-mesh    Decrypt the mesh in the asset bundle. Should be enabled for all dlc characters.
+
+  input                 File to process, for example character.cb
+```
+
 ## How to build asset bundle for custom characters
 1. Get a VRM model for the target character. If you have an FBX model, you could follow [the guide](https://vrm.dev/en/vrm/how_to_make_vrm/) to build one.
 2. Import the [example project](ExampleProject/) to Unity.
