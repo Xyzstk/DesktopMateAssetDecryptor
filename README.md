@@ -4,7 +4,7 @@ A small program for decrypting/encrypting the asset bundles of Desktop Mate. Cou
 
 ## Note: This program is only guaranteed to work with the specified version.
 
-### Current version: **1.12.0**
+### Current version: **1.13.0**
 
 ## Usage
 

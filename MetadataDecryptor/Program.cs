@@ -2,66 +2,64 @@
 
 public class MetadataDecryptor
 {
-    private const int headerSize = 0x264;
-    private const byte headerKey = 0x7C;
+    private const int headerSize = 0x324;
+    private const int blockKey = -1;
     struct BlockInfo
     {
-        public BlockInfo(int _valEntry, int _sizeEntry, int _offset1, int _offset2, bool _sign)
+        public BlockInfo(int _valEntry, int _sizeEntry, int _offset, bool _sign)
         {
             valEntry = _valEntry;
             sizeEntry = _sizeEntry;
-            offset1 = _offset1;
-            offset2 = _offset2;
+            offset = _offset;
             sign = _sign;
         }
         public int valEntry;
         public int sizeEntry;
-        public int offset1;
-        public int offset2;
+        public int offset;
         public bool sign;
     }
     private static readonly BlockInfo[] encryptedBlocks = {
-        new BlockInfo(0x188, 0x180, 0x20, -0x53, true),
-        new BlockInfo(0x1F4, 0x1EC, -0x28, 0x53, false),
-        new BlockInfo(0x50, 0x48, -0x10, -0x53, true),
-        new BlockInfo(0x254, 0x24C, -0x40, 0x53, false),
-        new BlockInfo(0x23C, 0x234, 0x28, -0x53, true),
-        new BlockInfo(0x218, 0x210, -0x30, 0x53, false),
-        new BlockInfo(0x1B8, 0x1B0, -0x2C, 0x53, false)
+        new BlockInfo(0x244, 0x248, -0x18, false),
+        new BlockInfo(0x19C, 0x1A0, 0x28, false),
+        new BlockInfo(0x274, 0x278, -0x10, false),
+        new BlockInfo(0x64, 0x68, -0x18, true),
+        new BlockInfo(0x1E4, 0x1E8, 0x28, true),
+        new BlockInfo(0x2D4, 0x2D8, -0x24, true),
+        new BlockInfo(0x94, 0x98, -0x28, true)
     };
     private static readonly (int, int)[] vectorOffset =
     {
-        (0x1E8, -0x40),
-        (0xD4, 0x38),
-        (0x44, 0x40),
-        (0x1AC, -0x24),
-        (0x188, 0x20),
-        (0x1F4, -0x28),
-        (0x50, -0x10),
-        (0x254, -0x40),
-        (0x23C, 0x28),
-        (0x218, -0x30),
-        (0x1B8, -0x2C),
-        (0x170, -0x40),
-        (0xB0, 0x40),
-        (0x200, -0x28),
-        (0xF8, 0x30),
-        (0x164, 0x40),
-        (0x158, 0x38),
-        (0x134, 0x1C),
-        (0x194, 0x1C),
-        (0x74, 0x10),
-        (0x5C, 0x14),
-        (0x17C, -0x2C),
-        (0x1A0, 0x18),
-        (0x11C, -0x40),
-        (0x104, -0x18),
-        (0x14C, 0x1C),
-        (0x8, 0x3C),
-        (0x8C, -0x28),
-        (0x80, -0x34),
-        (0x38, 0x18),
-        (0xE0, -0x20),
+        (0x13C, -0x30),
+        (0x304, 0x20),
+        (0xC4, -0x2C),
+        (0x28, 0x38),
+        (0x244, -0x18),
+        (0x19C, 0x28),
+        (0x274, -0x10),
+        (0x64, -0x18),
+        (0x1E4, 0x28),
+        (0x2D4, -0x24),
+        (0x94, -0x28),
+        (0x1FC, 0x1C),
+        (0x25C, 0x3C),
+        (0xB8, -0x34),
+        (0x178, 0x3C),
+        (0x2F8, 0x1C),
+        (0x40, 0x2C),
+        (0x4, -0x18),
+        (0xD0, -0x28),
+        (0x148, 0x28),
+        (0x58, 0x3C),
+        (0x238, -0x18),
+        (0x4C, 0x1C),
+        (0xA0, 0x18),
+        (0x22C, -0x28),
+        (0x2BC, 0x24),
+        (0x2E0, -0x18),
+        (0x88, 0x18),
+        (0x184, 0x34),
+        (0x31C, -0x1C),
+        (0x100, -0x28)
     };
     public static void Main(string[] args)
     {
@@ -76,7 +74,7 @@ public class MetadataDecryptor
             encryptedFileStream.Read(headerRaw, 0, headerSize);
             for(int i = 0; i < headerSize; i++)
             {
-                headerRaw[i] ^= (byte)((i & 0xFF) + headerKey);
+                headerRaw[i] ^= (byte)(~i & 0xFF);
             }
             int[] header = new int[headerSize >> 2];
             for (int i = 0; i < header.Length; i++)
@@ -89,7 +87,7 @@ public class MetadataDecryptor
             for(int i = 0; i < encryptedBlocks.Length; i++)
             {
                 BlockInfo block = encryptedBlocks[i];
-                decryptBlock(fileStream, header[block.valEntry >> 2], header[block.sizeEntry >> 2], block.offset1, block.offset2, block.sign);
+                decryptBlock(fileStream, header[block.valEntry >> 2], header[block.sizeEntry >> 2], block.offset, block.sign);
             }
             // Rebuild header
             int[] blockVectors = vectorOffset.Select(v => header[v.Item1 >> 2] + v.Item2 + 0x17C - headerSize).ToArray();
@@ -143,15 +141,15 @@ public class MetadataDecryptor
         }
     }
 
-    public static void decryptBlock(Stream fileStream, int addr, int size, int offset1, int offset2, bool sign)
+    public static void decryptBlock(Stream fileStream, int addr, int size, int offset, bool sign)
     {
         byte[] buf = new byte[size];
-        int fileOffset = addr + offset1 + 0x17C - headerSize;
+        int fileOffset = addr + offset + 0x17C - headerSize;
         fileStream.Seek(fileOffset, SeekOrigin.Begin);
         fileStream.Read(buf, 0, size);
         for (int i = 0; i < size; i++)
         {
-            buf[i] ^= (byte)(size * (sign ? -1 : 1) + i + offset2);
+            buf[i] ^= (byte)((size + blockKey) * (sign ? -1 : 1) + i);
         }
         fileStream.Seek(fileOffset, SeekOrigin.Begin);
         fileStream.Write(buf, 0, size);
